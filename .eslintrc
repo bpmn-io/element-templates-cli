@@ -1,0 +1,15 @@
+{
+  "extends": [
+    "plugin:bpmn-io/node"
+  ],
+  "overrides": [
+    {
+      "files": [
+        "src/browser.js"
+      ],
+      "extends": [
+        "plugin:bpmn-io/browser"
+      ]
+    }
+  ]
+}
