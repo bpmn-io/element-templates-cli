@@ -23,7 +23,8 @@ async function run() {
       type: 'string'
     },
     output: {
-      type: 'string'
+      type: 'string',
+      default: '-'
     }
   };
 
@@ -39,6 +40,11 @@ async function run() {
   const template = await readFile(values.template, 'utf8');
 
   const xml = await applyTemplate(diagram, template, values.element);
+
+  if (values.output === '-') {
+    console.log(xml);
+    return;
+  }
 
   await writeFile(values.output, xml);
 }
