@@ -4,7 +4,6 @@ Apply [element templates](https://github.com/bpmn-io/element-templates) on BPMN 
 
 ## Usage
 
-
 ```sh
 element-templates-cli --diagram diagram.bpmn --template template.json --element ServiceTask --output diagram_2.bpmn
 ```
@@ -14,7 +13,6 @@ element-templates-cli --diagram diagram.bpmn --template template.json --element 
 * [About element templates](https://github.com/bpmn-io/element-templates)
 * [Issue tracker](https://github.com/bpmn-io/element-templates-cli/issues)
 * [Forum](https://forum.bpmn.io)
-
 
 ## Development
 
@@ -27,7 +25,7 @@ npm install
 Then, depending on your use-case, you may run any of the following commands:
 
 ```sh
-# run linter and build the library
+# run linter, build, and test the library
 npm run all
 
 # lint
@@ -35,6 +33,9 @@ npm run lint
 
 # build
 npm run build
+
+# test
+npm test
 ```
 
 ## License
