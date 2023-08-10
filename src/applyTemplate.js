@@ -1,11 +1,13 @@
-import Modeler from 'camunda-bpmn-js/lib/camunda-cloud/Modeler';
+import Modeler from 'bpmn-js-headless/lib/Modeler.js';
+import ZeebeModdleExtension from 'zeebe-bpmn-moddle/resources/zeebe.json';
+import ElementTemplates from 'bpmn-js-element-templates/cloud-core';
 
-window.applyTemplate = applyTemplate;
+export async function applyTemplate(diagram, template, element) {
+  const parsedTemplate = JSON.parse(template);
 
-async function applyTemplate(diagram, template, element) {
   const modeler = await importDiagram(diagram);
   const el = getElement(modeler, element);
-  applyTemplateToElement(modeler, el, template);
+  applyTemplateToElement(modeler, el, parsedTemplate);
 
   const xml = await exportDiagram(modeler);
 
@@ -14,7 +16,12 @@ async function applyTemplate(diagram, template, element) {
 
 async function importDiagram(diagram) {
   const modeler = new Modeler({
-    container: document.createElement('div')
+    additionalModules: [
+      ElementTemplates
+    ],
+    moddleExtensions: {
+      zeebe: ZeebeModdleExtension
+    }
   });
 
   await modeler.importXML(diagram);

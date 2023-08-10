@@ -1,8 +1,13 @@
-const { promisify } = require('node:util');
-const childProcess = require('node:child_process');
-const fs = require('node:fs/promises');
-const path = require('node:path');
-const { expect } = require('chai');
+import { promisify } from 'node:util';
+import childProcess from 'node:child_process';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { expect } from 'chai';
+
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const CLI_PATH = path.resolve(__dirname, '../bin/cli.js');
 const execFile = promisify(childProcess.execFile);

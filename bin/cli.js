@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 
-const { parseArgs } = require('node:util');
+import { parseArgs } from 'node:util';
 
-const { readFile, writeFile } = require('node:fs/promises');
+import { readFile, writeFile } from 'node:fs/promises';
 
-const {
+import {
   applyTemplate
-} = require('../index.js');
+} from '../dist/index.js';
 
 run();
 
