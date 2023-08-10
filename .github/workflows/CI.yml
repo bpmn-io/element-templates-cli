@@ -27,6 +27,8 @@ jobs:
           ${{ runner.OS }}-node-
           ${{ runner.OS }}-
     - name: Install dependencies
+      env:
+        PUPPETEER_SKIP_DOWNLOAD: 'true'
       run: npm ci
     - name: Build
       run: npm run all
