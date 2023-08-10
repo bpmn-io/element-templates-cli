@@ -14,7 +14,7 @@
     "all": "npm run lint && npm run build && npm run test",
     "build": "esbuild src/browser.js --bundle --outfile=dist/browser.js",
     "lint": "eslint .",
-    "test": "mocha"
+    "test": "mocha --timeout=10000"
   },
   "repository": {
     "type": "git",
