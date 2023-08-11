@@ -8,8 +8,7 @@
   "files": [
     "bin",
     "dist",
-    "index.js",
-    "index.html"
+    "index.js"
   ],
   "scripts": {
     "all": "npm run lint && npm run build && npm run test",
