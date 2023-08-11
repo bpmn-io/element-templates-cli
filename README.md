@@ -2,6 +2,12 @@
 
 Apply [element templates](https://github.com/bpmn-io/element-templates) on BPMN elements in your terminal.
 
+## Installation
+
+```sh
+npm install --global element-templates-cli
+```
+
 ## Usage
 
 ```sh
