@@ -14,7 +14,8 @@
     "all": "npm run lint && npm run build && npm run test",
     "build": "esbuild src/index.js --bundle --format=esm --outfile=dist/index.js",
     "lint": "eslint .",
-    "test": "mocha --timeout=10000"
+    "test": "mocha --timeout=10000",
+    "prepublishOnly": "npm run build"
   },
   "repository": {
     "type": "git",
