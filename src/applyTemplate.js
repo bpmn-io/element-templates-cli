@@ -1,4 +1,4 @@
-import Modeler from 'bpmn-js-headless/lib/Modeler.js';
+import Modeler from 'bpmn-js-headless/lib/Modeler';
 import ZeebeModdleExtension from 'zeebe-bpmn-moddle/resources/zeebe.json';
 import ElementTemplates from 'bpmn-js-element-templates/cloud-core';
 
