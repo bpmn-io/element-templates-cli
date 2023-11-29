@@ -19,14 +19,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bpmn-io/bpmn-js-element-templates.git"
+    "url": "git+https://github.com/bpmn-io/element-templates-cli.git"
   },
   "author": "Maciej Barelkowski <maciej.barelkowski@camunda.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/bpmn-io/bpmn-js-element-templates/issues"
+    "url": "https://github.com/bpmn-io/element-templates-cli/issues"
   },
-  "homepage": "https://github.com/bpmn-io/bpmn-js-element-templates#readme",
+  "homepage": "https://github.com/bpmn-io/element-templates-cli#readme",
   "devDependencies": {
     "bpmn-js-element-templates": "file:vendor/bpmn-js-element-templates-1.3.0.tgz",
     "bpmn-js-headless": "^0.0.1",
