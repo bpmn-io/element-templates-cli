@@ -14,13 +14,29 @@ const execFile = promisify(childProcess.execFile);
 
 describe('cli', function() {
 
-  it('should apply a template', async function() {
+  test.only = function(testName) {
+    return test(testName, true);
+  };
+
+  describe('apply template', function() {
+
+    test('rest-conditional');
+
+
+    test('easy-post-connector');
+  });
+});
+
+function test(testName, only = false) {
+  const fn = only ? it.only : it;
+
+  fn(`should work for: ${testName}`, async function() {
 
     // given
-    const diagram = 'test/fixtures/diagrams/rest-conditional.bpmn';
-    const template = 'test/fixtures/templates/rest-conditional.json';
+    const diagram = `test/fixtures/diagrams/${testName}.bpmn`;
+    const template = `test/fixtures/templates/${testName}.json`;
     const element = 'ServiceTask';
-    const expected = await fs.readFile('test/fixtures/diagrams/rest-conditional_expected.bpmn', 'utf8');
+    const expected = await fs.readFile(`test/fixtures/diagrams/${testName}_expected.bpmn`, 'utf8');
 
     // when
     const { stdout } = await exec({
@@ -30,10 +46,9 @@ describe('cli', function() {
     });
 
     // then
-    expect(stdout.trim()).to.eql(expected.trim());
+    expect(withoutDiagram(stdout.trim())).to.eql(withoutDiagram(expected.trim()));
   });
-
-});
+}
 
 function exec(argsMap) {
   const args = prepareArgs(argsMap);
@@ -68,4 +83,17 @@ function prepareArgs({
   }
 
   return args;
+}
+
+/**
+ * @param {string} xml
+ */
+function withoutDiagram(xml) {
+  const START_CLAUSE = '<bpmndi:BPMNDiagram';
+  const END_CLAUSE = '</bpmndi:BPMNDiagram>';
+
+  const startPosition = xml.search(START_CLAUSE);
+  const endPosition = xml.search(END_CLAUSE);
+
+  return xml.slice(0, startPosition) + xml.slice(endPosition + END_CLAUSE.length);
 }
