@@ -14,8 +14,8 @@ const execFile = promisify(childProcess.execFile);
 
 describe('cli', function() {
 
-  test.only = function(testName) {
-    return test(testName, true);
+  test.only = function(testName, element) {
+    return test(testName, element, true);
   };
 
   describe('apply template', function() {
@@ -24,10 +24,13 @@ describe('cli', function() {
 
 
     test('easy-post-connector');
+
+
+    test('task-header-with-condition');
   });
 });
 
-function test(testName, only = false) {
+function test(testName, element = 'ServiceTask', only = false) {
   const fn = only ? it.only : it;
 
   fn(`should work for: ${testName}`, async function() {
@@ -35,7 +38,6 @@ function test(testName, only = false) {
     // given
     const diagram = `test/fixtures/diagrams/${testName}.bpmn`;
     const template = `test/fixtures/templates/${testName}.json`;
-    const element = 'ServiceTask';
     const expected = await fs.readFile(`test/fixtures/diagrams/${testName}_expected.bpmn`, 'utf8');
 
     // when
