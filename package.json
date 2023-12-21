@@ -28,7 +28,7 @@
   },
   "homepage": "https://github.com/bpmn-io/element-templates-cli#readme",
   "devDependencies": {
-    "bpmn-js-element-templates": "file:vendor/bpmn-js-element-templates-1.9.1.tgz",
+    "bpmn-js-element-templates": "file:vendor/bpmn-js-element-templates-1.11.0.tgz",
     "bpmn-js-headless": "^0.0.1",
     "chai": "^4.3.7",
     "esbuild": "^0.19.0",
