@@ -1,6 +1,6 @@
 {
   "name": "element-templates-cli",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Apply element templates on BPMN elements in your terminal.",
   "main": "dist/index.js",
   "bin": "bin/cli.js",
