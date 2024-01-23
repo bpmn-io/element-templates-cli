@@ -1,6 +1,6 @@
 import Modeler from 'bpmn-js-headless/lib/Modeler';
 import ZeebeModdleExtension from 'zeebe-bpmn-moddle/resources/zeebe.json';
-import ElementTemplates from 'bpmn-js-element-templates/cloud-core';
+import { CloudElementTemplatesCoreModule } from 'bpmn-js-element-templates/core';
 
 export async function applyTemplate(diagram, template, element) {
   const parsedTemplate = JSON.parse(template);
@@ -17,7 +17,7 @@ export async function applyTemplate(diagram, template, element) {
 async function importDiagram(diagram) {
   const modeler = new Modeler({
     additionalModules: [
-      ElementTemplates
+      CloudElementTemplatesCoreModule
     ],
     moddleExtensions: {
       zeebe: ZeebeModdleExtension
