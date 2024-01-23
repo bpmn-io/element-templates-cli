@@ -2,6 +2,13 @@
 
 All notable changes to [element-templates-cli](https://github.com/bpmn-io/element-templates-cli) are documented here. We use [semantic versioning](http://semver.org/) for releases.
 
+## [0.2.2](https://github.com/bpmn-io/element-templates-cli/compare/v0.2.1...v0.2.2) (2024-01-23)
+
+
+### Bug Fixes
+
+* correctly use `package.json#bin` ([0a7fe1f](https://github.com/bpmn-io/element-templates-cli/commit/0a7fe1f406746971b6ed3e42f87511c3aac82aa6))
+
 ## [0.2.1](https://github.com/bpmn-io/element-templates-cli/compare/v0.2.0...v0.2.1) (2024-01-22)
 
 
