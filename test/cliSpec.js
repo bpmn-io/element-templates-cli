@@ -14,25 +14,34 @@ const execFile = promisify(childProcess.execFile);
 
 describe('cli', function() {
 
-  test.only = function(testName, element) {
-    return test(testName, element, true);
-  };
-
   describe('apply template', function() {
 
-    test('rest-conditional');
+    testApply('rest-conditional');
 
 
-    test('easy-post-connector');
+    testApply('easy-post-connector');
 
 
-    test('task-header-with-condition');
+    testApply('task-header-with-condition');
+  });
+
+
+  describe('validate template', function() {
+
+    testValidate('rest-conditional');
+
+
+    testValidate('easy-post-connector');
+
+
+    testValidate('task-header-with-condition');
   });
 });
 
-function test(testName, element = 'ServiceTask', only = false) {
-  const fn = only ? it.only : it;
 
+
+// helpers //////////////////////
+function testApply(testName, element = 'ServiceTask', fn = it) {
   fn(`should work for: ${testName}`, async function() {
 
     // given
@@ -41,32 +50,32 @@ function test(testName, element = 'ServiceTask', only = false) {
     const expected = await fs.readFile(`test/fixtures/diagrams/${testName}_expected.bpmn`, 'utf8');
 
     // when
-    const { stdout } = await exec({
+    const { stdout } = await exec(prepareApplyArgs({
       diagram,
       template,
       element
-    });
+    }));
 
     // then
     expect(withoutDiagram(stdout.trim())).to.eql(withoutDiagram(expected.trim()));
   });
 }
 
-function exec(argsMap) {
-  const args = prepareArgs(argsMap);
+function testValidate(testName, fn = it) {
+  const template = `test/fixtures/templates/${testName}.json`;
 
-  return execFile(CLI_PATH, args, {
-    cwd: path.resolve(__dirname, '..')
+  fn(`should validate for: ${testName}`, async function() {
+    return exec([ 'validate', template ]);
   });
 }
 
-function prepareArgs({
+function prepareApplyArgs({
   diagram,
   template,
   element,
   output
 }) {
-  const args = [];
+  const args = [ 'apply' ];
 
   if (diagram) {
     args.push('--diagram', diagram);
@@ -98,4 +107,10 @@ function withoutDiagram(xml) {
   const endPosition = xml.search(END_CLAUSE);
 
   return xml.slice(0, startPosition) + xml.slice(endPosition + END_CLAUSE.length);
+}
+
+function exec(args) {
+  return execFile(CLI_PATH, args, {
+    cwd: path.resolve(__dirname, '..')
+  });
 }

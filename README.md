@@ -11,7 +11,11 @@ npm install --global element-templates-cli
 ## Usage
 
 ```sh
-element-templates-cli --diagram diagram.bpmn --template template.json --element ServiceTask --output diagram_2.bpmn
+# Apply a template to an element in a BPMN diagram
+element-templates-cli apply--diagram diagram.bpmn --template template.json --element ServiceTask --output diagram_2.bpmn
+
+# Validate a template
+element-templates-cli validate template.json
 ```
 
 ## Additional resources

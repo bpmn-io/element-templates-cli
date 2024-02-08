@@ -30,6 +30,7 @@
   },
   "homepage": "https://github.com/bpmn-io/element-templates-cli#readme",
   "devDependencies": {
+    "@bpmn-io/element-templates-validator": "^1.7.0",
     "bpmn-js-element-templates": "^1.12.1",
     "bpmn-js-headless": "^0.0.1",
     "chai": "^4.3.7",
