@@ -27,6 +27,9 @@ describe('cli', function() {
 
 
     test('task-header-with-condition');
+
+
+    test('add-item');
   });
 });
 

@@ -1,0 +1,135 @@
+{
+  "$schema": "https://unpkg.com/@camunda/zeebe-element-templates-json-schema/resources/schema.json",
+  "name": "AddItemExample",
+  "id": "05d1c06a-b65d-428c-8ca0-10c14b3fb0ee",
+  "version": 3,
+  "description": "Add item to DynamoDB table",
+  "documentationRef": "https://docs.camunda.io/docs/components/connectors/out-of-the-box-connectors/aws-dynamodb/",
+  "category": {
+    "id": "connectors",
+    "name": "Connectors"
+  },
+  "appliesTo": [
+    "bpmn:Task"
+  ],
+  "elementType": {
+    "value": "bpmn:ServiceTask"
+  },
+  "groups": [
+    {
+      "id": "input",
+      "label": "Input"
+    }
+  ],
+  "properties": [
+    {
+      "value": "io.camunda:aws-dynamodb:1",
+      "binding": {
+        "property": "type",
+        "type": "zeebe:taskDefinition"
+      },
+      "type": "Hidden"
+    },
+    {
+      "id": "input.operationGroup",
+      "label": "Choose category",
+      "group": "operation",
+      "binding": {
+        "name": "input.operationGroup",
+        "type": "zeebe:input"
+      },
+      "type": "Dropdown",
+      "choices": [
+        {
+          "name": "Item",
+          "value": "itemOperation"
+        }
+      ],
+      "value": "itemOperation"
+    },
+    {
+      "id": "input.itemOperation",
+      "label": "Select action",
+      "group": "operation",
+      "binding": {
+        "name": "input.itemOperation",
+        "type": "zeebe:input"
+      },
+      "condition": {
+        "property": "input.operationGroup",
+        "equals": "itemOperation",
+        "type": "simple"
+      },
+      "type": "Dropdown",
+      "choices": [
+        {
+          "name": "Add item",
+          "value": "addItem"
+        }
+      ],
+      "value": "addItem"
+    },
+    {
+      "id": "input.addItem.tableName",
+      "label": "Table name",
+      "description": "Name of DynamoDB table",
+      "optional": false,
+      "constraints": {
+        "notEmpty": true
+      },
+      "feel": "optional",
+      "group": "input",
+      "binding": {
+        "name": "input.tableName",
+        "type": "zeebe:input"
+      },
+      "condition": {
+        "allMatch": [
+          {
+            "property": "input.itemOperation",
+            "equals": "addItem",
+            "type": "simple"
+          },
+          {
+            "property": "input.operationGroup",
+            "equals": "itemOperation",
+            "type": "simple"
+          }
+        ]
+      },
+      "type": "String",
+      "value": "tableName"
+    },
+    {
+      "id": "input.item",
+      "label": "Item",
+      "description": "DynamoDB item (group of attributes)",
+      "optional": false,
+      "constraints": {
+        "notEmpty": true
+      },
+      "feel": "required",
+      "group": "input",
+      "binding": {
+        "name": "input.item",
+        "type": "zeebe:input"
+      },
+      "condition": {
+        "allMatch": [
+          {
+            "property": "input.itemOperation",
+            "equals": "addItem",
+            "type": "simple"
+          },
+          {
+            "property": "input.operationGroup",
+            "equals": "itemOperation",
+            "type": "simple"
+          }
+        ]
+      },
+      "type": "String",
+      "value": "={\"id\":\"value\"}"
+    }
+  ]
+}
