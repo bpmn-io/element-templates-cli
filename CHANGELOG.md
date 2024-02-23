@@ -2,6 +2,18 @@
 
 All notable changes to [element-templates-cli](https://github.com/bpmn-io/element-templates-cli) are documented here. We use [semantic versioning](http://semver.org/) for releases.
 
+## [0.3.0](https://github.com/bpmn-io/element-templates-cli/compare/v0.2.2...v0.3.0) (2024-02-23)
+
+
+### Features
+
+* allow Boolean and Number types in Camunda 8 diagrams ([372fba6](https://github.com/bpmn-io/element-templates-cli/commit/372fba6a2edc5fb62b277638a432cd6df841170d))
+
+
+### Bug Fixes
+
+* evaluate all chained conditions ([372fba6](https://github.com/bpmn-io/element-templates-cli/commit/372fba6a2edc5fb62b277638a432cd6df841170d))
+
 ## [0.2.2](https://github.com/bpmn-io/element-templates-cli/compare/v0.2.1...v0.2.2) (2024-01-23)
 
 
