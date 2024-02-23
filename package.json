@@ -31,7 +31,7 @@
   "homepage": "https://github.com/bpmn-io/element-templates-cli#readme",
   "devDependencies": {
     "bpmn-js-element-templates": "^1.14.0",
-    "bpmn-js-headless": "^0.0.1",
+    "bpmn-js-headless": "^0.1.0",
     "chai": "^4.3.7",
     "esbuild": "^0.19.0",
     "eslint": "^8.46.0",
