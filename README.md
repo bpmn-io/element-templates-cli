@@ -1,3 +1,6 @@
+> [!WARNING]
+> This is an experimental library and not officially supported / endorsed by [bpmn.io](https://bpmn.io/). 
+
 # element-templates-cli
 
 Apply [element templates](https://github.com/bpmn-io/element-templates) on BPMN elements in your terminal.
