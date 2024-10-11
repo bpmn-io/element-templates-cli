@@ -2,7 +2,7 @@ import bpmnIoPlugin from 'eslint-plugin-bpmn-io';
 
 export default [
   {
-    ignores: [ 'node_modules', 'dist' ],
+    ignores: [ 'dist' ],
   },
   ...bpmnIoPlugin.configs.node,
   ...bpmnIoPlugin.configs.mocha.map(config => {
@@ -13,7 +13,4 @@ export default [
       ]
     };
   }),
-  {
-    files: [ '**/*.js', '**/*.mjs' ],
-  }
 ];
