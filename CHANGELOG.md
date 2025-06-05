@@ -2,6 +2,13 @@
 
 All notable changes to [element-templates-cli](https://github.com/bpmn-io/element-templates-cli) are documented here. We use [semantic versioning](http://semver.org/) for releases.
 
+## [0.4.0](https://github.com/bpmn-io/element-templates-cli/compare/v0.3.1...v0.4.0) (2025-06-05)
+
+
+### Features
+
+* support bpmn-js-element-templates@2.6.0 ([ce22ad5](https://github.com/bpmn-io/element-templates-cli/commit/ce22ad51ee3d1d5d68acf33679c080d983f1dca8))
+
 ## [0.3.1](https://github.com/bpmn-io/element-templates-cli/compare/v0.3.0...v0.3.1) (2024-04-24)
 
 
