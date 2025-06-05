@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_040od8p" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.35.0" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.8.0">
+  <bpmn:process id="Process_1o69a6i" isExecutable="true">
+    <bpmn:startEvent id="StartEvent_1">
+      <bpmn:outgoing>Flow_1a6hwox</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:sequenceFlow id="Flow_1a6hwox" sourceRef="StartEvent_1" targetRef="ServiceTask" />
+    <bpmn:endEvent id="EndEvent">
+      <bpmn:incoming>Flow_12dwv5d</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_12dwv5d" sourceRef="Ad_Hoc_Sub_Process" targetRef="EndEvent" />
+    <bpmn:sequenceFlow id="Flow_1hdpex0" sourceRef="ServiceTask" targetRef="Ad_Hoc_Sub_Process" />
+    <bpmn:serviceTask id="ServiceTask" zeebe:modelerTemplate="05d1c06a-b65d-428c-8ca0-10c14b3fb0ee" zeebe:modelerTemplateVersion="3">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="io.camunda:aws-dynamodb:1" />
+        <zeebe:ioMapping>
+          <zeebe:input source="itemOperation" target="input.operationGroup" />
+          <zeebe:input source="addItem" target="input.itemOperation" />
+          <zeebe:input source="tableName" target="input.tableName" />
+          <zeebe:input source="={&#34;id&#34;:&#34;value&#34;}" target="input.item" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_1a6hwox</bpmn:incoming>
+      <bpmn:outgoing>Flow_1hdpex0</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:adHocSubProcess id="Ad_Hoc_Sub_Process">
+      <bpmn:extensionElements>
+        <zeebe:adHoc activeElementsCollection="=[&#34;Task_A&#34;]" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_1hdpex0</bpmn:incoming>
+      <bpmn:outgoing>Flow_12dwv5d</bpmn:outgoing>
+      <bpmn:task id="Task_A" name="Task A" />
+      <bpmn:completionCondition xsi:type="bpmn:tFormalExpression">=someVariable = "yes"</bpmn:completionCondition>
+    </bpmn:adHocSubProcess>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_1o69a6i">
+      <bpmndi:BPMNShape id="StartEvent_1_di" bpmnElement="StartEvent_1">
+        <dc:Bounds x="182" y="162" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0coo68a_di" bpmnElement="EndEvent">
+        <dc:Bounds x="852" y="162" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_132l89a_di" bpmnElement="ServiceTask">
+        <dc:Bounds x="280" y="140" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_02uwkef_di" bpmnElement="Ad_Hoc_Sub_Process" isExpanded="true">
+        <dc:Bounds x="450" y="80" width="350" height="200" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1uuqux3_di" bpmnElement="Task_A">
+        <dc:Bounds x="570" y="130" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_1a6hwox_di" bpmnElement="Flow_1a6hwox">
+        <di:waypoint x="218" y="180" />
+        <di:waypoint x="280" y="180" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_12dwv5d_di" bpmnElement="Flow_12dwv5d">
+        <di:waypoint x="800" y="180" />
+        <di:waypoint x="852" y="180" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1hdpex0_di" bpmnElement="Flow_1hdpex0">
+        <di:waypoint x="380" y="180" />
+        <di:waypoint x="450" y="180" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

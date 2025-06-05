@@ -30,17 +30,20 @@ describe('cli', function() {
 
 
     test('add-item');
+
+
+    test('ad-hoc-sub-process', 'add-item');
   });
 });
 
-function test(testName, element = 'ServiceTask', only = false) {
+function test(testName, templateName = testName, element = 'ServiceTask', only = false) {
   const fn = only ? it.only : it;
 
   fn(`should work for: ${testName}`, async function() {
 
     // given
     const diagram = `test/fixtures/diagrams/${testName}.bpmn`;
-    const template = `test/fixtures/templates/${testName}.json`;
+    const template = `test/fixtures/templates/${templateName}.json`;
     const expected = await fs.readFile(`test/fixtures/diagrams/${testName}_expected.bpmn`, 'utf8');
 
     // when
