@@ -33,6 +33,9 @@ describe('cli', function() {
 
 
     test('ad-hoc-sub-process', 'add-item');
+
+
+    test('ad-hoc', 'ad-hoc', 'AdHocSubProcess');
   });
 });
 
