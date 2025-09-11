@@ -30,13 +30,13 @@
   },
   "homepage": "https://github.com/bpmn-io/element-templates-cli#readme",
   "devDependencies": {
-    "bpmn-js-element-templates": "^2.6.0",
+    "bpmn-js-element-templates": "^2.12.0",
     "bpmn-js-headless": "^0.1.0",
     "chai": "^5.2.0",
     "esbuild": "^0.25.5",
     "eslint": "^9.28.0",
     "eslint-plugin-bpmn-io": "^2.2.0",
     "mocha": "^11.5.0",
-    "zeebe-bpmn-moddle": "^1.9.0"
+    "zeebe-bpmn-moddle": "^1.11.0"
   }
 }
