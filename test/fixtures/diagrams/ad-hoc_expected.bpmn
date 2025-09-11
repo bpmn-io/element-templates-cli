@@ -3,8 +3,8 @@
   <bpmn:process id="Process_1o69a6i" isExecutable="true">
     <bpmn:adHocSubProcess id="AdHocSubProcess" zeebe:modelerTemplate="ad-hoc" zeebe:modelerTemplateVersion="1">
       <bpmn:extensionElements>
-        <zeebe:adHoc outputCollection="toolCallResults" outputElement="={ id: toolCall._meta.id, name: toolCall._meta.name, content: toolCallResult }" />
         <zeebe:taskDefinition type="io.camunda.agenticai:aiagent-job-worker:1" />
+        <zeebe:adHoc outputCollection="toolCallResults" outputElement="={ id: toolCall._meta.id, name: toolCall._meta.name, content: toolCallResult }" />
       </bpmn:extensionElements>
     </bpmn:adHocSubProcess>
   </bpmn:process>
