@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_040od8p" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.35.0" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.8.0">
+  <bpmn:process id="Process_1o69a6i" isExecutable="true">
+    <bpmn:adHocSubProcess id="AdHocSubProcess" zeebe:modelerTemplate="ad-hoc" zeebe:modelerTemplateVersion="1">
+      <bpmn:extensionElements>
+        <zeebe:adHoc outputCollection="toolCallResults" outputElement="={ id: toolCall._meta.id, name: toolCall._meta.name, content: toolCallResult }" />
+        <zeebe:taskDefinition type="io.camunda.agenticai:aiagent-job-worker:1" />
+      </bpmn:extensionElements>
+    </bpmn:adHocSubProcess>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_1o69a6i">
+      <bpmndi:BPMNShape id="Activity_02uwkef_di" bpmnElement="AdHocSubProcess" isExpanded="true">
+        <dc:Bounds x="450" y="80" width="350" height="200" />
+      </bpmndi:BPMNShape>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
