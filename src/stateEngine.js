@@ -49,6 +49,54 @@ export function createStateEngine(template, inputValues = {}) {
   return { values, visibleProperties };
 }
 
+// Validates a single constraint against a value. Returns null when the value
+// satisfies the constraint, or a human-readable message when it does not.
+// Constraints that are not applicable (e.g. length checks on undefined) are
+// skipped rather than thrown, matching modeler behaviour.
+const checkConstraint = (name, constraint, value) => {
+  const str = value === undefined || value === null ? '' : String(value);
+
+  if (name === 'notEmpty') {
+    return constraint && str.trim() === '' ? 'Must not be empty' : null;
+  }
+
+  if (name === 'minLength') {
+    return str.length < constraint ? `Must have at least ${constraint} characters` : null;
+  }
+
+  if (name === 'maxLength') {
+    return str.length > constraint ? `Must have at most ${constraint} characters` : null;
+  }
+
+  if (name === 'pattern') {
+    const regex = new RegExp(constraint.value);
+    return !regex.test(str) ? (constraint.message ?? `Must match pattern ${constraint.value}`) : null;
+  }
+
+  return null;
+};
+
+// Aggregates all constraint violations across the currently visible properties.
+// Only visible properties are checked — hidden properties are not required
+// because they are not written to the BPMN XML and their values are irrelevant.
+// Returns an array of { id, label, constraint, message } objects so callers can
+// report precisely which fields need attention before applying the template.
+export function validateConstraints(visibleProperties, values) {
+  return visibleProperties.flatMap((property) => {
+    const constraints = property.constraints;
+    if (!constraints) {
+      return [];
+    }
+
+    return Object.entries(constraints).flatMap(([ name, constraint ]) => {
+      const message = checkConstraint(name, constraint, values[property.id]);
+      return message
+        ? [ { id: property.id, label: property.label, constraint: name, message } ]
+        : [];
+    });
+  });
+}
+
 // Mirrors the condition evaluation logic of the Camunda web modeler so that
 // CLI-driven template application honours the same show/hide rules a user would
 // experience interactively. Conditions are evaluated purely against an in-memory
