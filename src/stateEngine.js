@@ -97,7 +97,68 @@ export function validateConstraints(visibleProperties, values) {
   });
 }
 
-// Mirrors the condition evaluation logic of the Camunda web modeler so that
+// Boolean and Number fields with feel: optional or feel: static are always
+// persisted as FEEL expressions by the modeler (prefixed with "="). We mirror
+// that here so values flowing into applyTemplate are in the correct format and
+// the written BPMN is semantically equivalent to what the modeler would produce.
+const FEEL_ALWAYS_TYPES = new Set([ 'Boolean', 'Number' ]);
+
+const isFEELExpression = (value) =>
+  typeof value === 'string' && value.trimStart().startsWith('=');
+
+const needsFeelPrefix = (property) =>
+  FEEL_ALWAYS_TYPES.has(property.type) &&
+  (property.feel === 'optional' || property.feel === 'static');
+
+// Wraps a raw scalar value as a FEEL literal (e.g. true → "= true", 42 → "= 42").
+// If the value is already a FEEL expression we leave it untouched to avoid
+// double-prefixing when the caller has already done the right thing.
+const toFeelLiteral = (value) =>
+  isFEELExpression(String(value)) ? String(value) : `= ${value}`;
+
+// Returns a new values map where Boolean / Number fields that the modeler always
+// persists as FEEL expressions are normalised accordingly. This prevents the
+// BPMN writer from receiving bare "true"/"false" or numeric strings and writing
+// them as plain strings instead of FEEL.
+export function normalizeFeelValues(visibleProperties, values) {
+  return visibleProperties.reduce((acc, property) => {
+    if (!property.id || !needsFeelPrefix(property)) {
+      return acc;
+    }
+
+    const value = acc[property.id];
+    if (value === undefined || value === null) {
+      return acc;
+    }
+
+    return isFEELExpression(String(value))
+      ? acc
+      : { ...acc, [property.id]: toFeelLiteral(value) };
+  }, { ...values });
+}
+
+// For feel: "required" properties the modeler enforces that the user enters
+// a FEEL expression (i.e. a value starting with "="). We surface the same
+// violation here so CLI callers can catch missing expressions before writing
+// potentially invalid BPMN. Optional and static FEEL fields are not flagged —
+// they accept plain values too (the modeler normalises them automatically, and
+// so does normalizeFeelValues above).
+export function validateFeel(visibleProperties, values) {
+  return visibleProperties.flatMap((property) => {
+    if (property.feel !== 'required' || !property.id) {
+      return [];
+    }
+
+    const value = values[property.id];
+    const str = value === undefined || value === null ? '' : String(value);
+
+    return str !== '' && !isFEELExpression(str)
+      ? [ { id: property.id, label: property.label, feel: 'required', message: 'Must be a FEEL expression (start with "=")' } ]
+      : [];
+  });
+}
+
+
 // CLI-driven template application honours the same show/hide rules a user would
 // experience interactively. Conditions are evaluated purely against an in-memory
 // value map - no DOM, no React, no modeler instance needed.
