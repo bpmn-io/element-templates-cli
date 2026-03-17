@@ -1,13 +1,15 @@
 import Modeler from 'bpmn-js-headless/lib/Modeler';
 import ZeebeModdleExtension from 'zeebe-bpmn-moddle/resources/zeebe.json';
 import { CloudElementTemplatesCoreModule } from 'bpmn-js-element-templates/core';
+import { createStateEngine } from './stateEngine.js';
 
-export async function applyTemplate(diagram, template, element) {
+export async function applyTemplate(diagram, template, element, values = {}) {
   const parsedTemplate = JSON.parse(template);
+  const effectiveTemplate = withResolvedState(parsedTemplate, values);
 
   const modeler = await importDiagram(diagram);
   const el = getElement(modeler, element);
-  applyTemplateToElement(modeler, el, parsedTemplate);
+  applyTemplateToElement(modeler, el, effectiveTemplate);
 
   const xml = await exportDiagram(modeler);
 
@@ -48,4 +50,24 @@ function applyTemplateToElement(modeler, element, template) {
   elementTemplates.set([ template ]);
 
   elementTemplates.applyTemplate(element, template);
+}
+
+function withResolvedState(template, inputValues) {
+  const { visibleProperties } = createStateEngine(template, inputValues);
+
+  const properties = visibleProperties.map((property) => {
+    if (!property.id || inputValues[property.id] === undefined) {
+      return property;
+    }
+
+    return {
+      ...property,
+      value: inputValues[property.id]
+    };
+  });
+
+  return {
+    ...template,
+    properties
+  };
 }

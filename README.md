@@ -17,6 +17,12 @@ npm install --global element-templates-cli
 element-templates-cli --diagram diagram.bpmn --template template.json --element ServiceTask --output diagram_2.bpmn
 ```
 
+Optionally, provide input values (`property.id -> value`) to drive conditional visibility in a headless way:
+
+```sh
+element-templates-cli --diagram diagram.bpmn --template template.json --element ServiceTask --values values.json --output diagram_2.bpmn
+```
+
 ## Additional resources
 
 * [About element templates](https://github.com/bpmn-io/element-templates)
