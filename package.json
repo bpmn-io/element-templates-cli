@@ -9,8 +9,7 @@
   "type": "module",
   "files": [
     "bin",
-    "dist",
-    "index.js"
+    "dist"
   ],
   "scripts": {
     "all": "npm run lint && npm run build && npm run test",
@@ -30,7 +29,7 @@
   },
   "homepage": "https://github.com/bpmn-io/element-templates-cli#readme",
   "devDependencies": {
-    "bpmn-js-element-templates": "^2.12.0",
+    "bpmn-js-element-templates": "file:../bpmn-js-element-templates",
     "bpmn-js-headless": "^0.1.0",
     "chai": "^6.0.0",
     "esbuild": "^0.25.5",
