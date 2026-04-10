@@ -29,7 +29,7 @@
   },
   "homepage": "https://github.com/bpmn-io/element-templates-cli#readme",
   "devDependencies": {
-    "bpmn-js-element-templates": "file:../bpmn-js-element-templates",
+    "bpmn-js-element-templates": "github:vringar/bpmn-js-element-templates#feat/export-util-subpath",
     "bpmn-js-headless": "^0.1.0",
     "chai": "^6.0.0",
     "esbuild": "^0.25.5",
