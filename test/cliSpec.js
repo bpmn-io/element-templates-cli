@@ -1,6 +1,7 @@
 import { promisify } from 'node:util';
 import childProcess from 'node:child_process';
 import fs from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
 import { expect } from 'chai';
 
@@ -454,7 +455,242 @@ describe('cli', function() {
       }
     });
   });
+
+
+  describe('template resolution', function() {
+
+    const fixtureDiagram = 'test/fixtures/diagrams/rest-conditional.bpmn';
+    const fixtureTemplate = 'test/fixtures/templates/rest-conditional.json';
+
+    it('should resolve via --template-path', async function() {
+
+      const { stdout } = await exec({
+        subcommand: 'query',
+        diagram: fixtureDiagram,
+        templatePath: fixtureTemplate,
+        element: 'ServiceTask'
+      });
+
+      const parsed = JSON.parse(stdout);
+      expect(parsed).to.be.an('object');
+    });
+
+
+    it('should accept --template as deprecated alias', async function() {
+
+      // covered implicitly by other tests, but assert explicitly here
+      const { stdout } = await exec({
+        subcommand: 'query',
+        diagram: fixtureDiagram,
+        template: fixtureTemplate,
+        element: 'ServiceTask'
+      });
+
+      expect(JSON.parse(stdout)).to.be.an('object');
+    });
+
+
+    it('should error when no template source is given', async function() {
+
+      try {
+        await exec({
+          subcommand: 'query',
+          diagram: fixtureDiagram,
+          element: 'ServiceTask'
+        });
+        expect.fail('should have thrown');
+      } catch (err) {
+        expect(err.stderr).to.include('Missing template source');
+      }
+    });
+
+
+    it('should error when both --template-path and --template-id are given', async function() {
+
+      try {
+        await exec({
+          subcommand: 'query',
+          diagram: fixtureDiagram,
+          templatePath: fixtureTemplate,
+          templateId: 'io.camunda.connectors.HttpJson.v2',
+          element: 'ServiceTask'
+        });
+        expect.fail('should have thrown');
+      } catch (err) {
+        expect(err.stderr).to.include('Use only one of');
+      }
+    });
+
+
+    it('should resolve --template-id from walked-up .camunda/ dir', async function() {
+
+      // given: copy fixture into a temp .camunda/element-templates/ dir
+      const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'et-cli-'));
+      const localTemplatesDir = path.join(tmpRoot, 'project', '.camunda', 'element-templates');
+      await fs.mkdir(localTemplatesDir, { recursive: true });
+
+      const templateContent = await fs.readFile(fixtureTemplate, 'utf8');
+      const template = JSON.parse(templateContent);
+      template.id = 'io.test.cli.resolve-local';
+      await fs.writeFile(
+        path.join(localTemplatesDir, 'local.json'),
+        JSON.stringify(template)
+      );
+
+      // copy the diagram into the project dir so walk-up finds the .camunda/ dir
+      const diagramContent = await fs.readFile(fixtureDiagram, 'utf8');
+      const localDiagram = path.join(tmpRoot, 'project', 'diagram.bpmn');
+      await fs.writeFile(localDiagram, diagramContent);
+
+      try {
+        const { stdout } = await exec({
+          subcommand: 'query',
+          diagram: localDiagram,
+          templateId: 'io.test.cli.resolve-local',
+          element: 'ServiceTask',
+
+          // isolate from any local cache / modeler install
+          env: {
+            XDG_CACHE_HOME: path.join(tmpRoot, 'cache'),
+            XDG_CONFIG_HOME: path.join(tmpRoot, 'config')
+          }
+        });
+
+        expect(JSON.parse(stdout)).to.be.an('object');
+      } finally {
+        await fs.rm(tmpRoot, { recursive: true, force: true });
+      }
+    });
+
+
+    it('should error when --template-id is unresolvable', async function() {
+
+      const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'et-cli-'));
+
+      try {
+        await exec({
+          subcommand: 'query',
+          diagram: fixtureDiagram,
+          templateId: 'io.test.cli.definitely-does-not-exist-abc123',
+          element: 'ServiceTask',
+          env: {
+            XDG_CACHE_HOME: path.join(tmpRoot, 'cache'),
+            XDG_CONFIG_HOME: path.join(tmpRoot, 'config')
+          }
+        });
+        expect.fail('should have thrown');
+      } catch (err) {
+        expect(err.stderr).to.match(/not found in local paths|marketplace/);
+      } finally {
+        await fs.rm(tmpRoot, { recursive: true, force: true });
+      }
+    });
+  });
+
+
+  describe('list templates', function() {
+
+    it('should list distinct template ids from local dirs', async function() {
+
+      // given
+      const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'etc-list-'));
+
+      // getCliCacheDir() returns XDG_CACHE_HOME/element-templates-cli
+      const templateDir = path.join(tmpRoot, 'element-templates-cli', 'templates');
+      await fs.mkdir(templateDir, { recursive: true });
+
+      // Write two templates with different ids
+      await fs.writeFile(path.join(templateDir, 'a.json'), JSON.stringify({ id: 'com.example.A', name: 'Template A', version: 1 }));
+      await fs.writeFile(path.join(templateDir, 'b.json'), JSON.stringify([
+        { id: 'com.example.B', name: 'Template B', version: 1 },
+        { id: 'com.example.B', name: 'Template B', version: 2 }
+      ]));
+
+      // when
+      const { stdout } = await execRaw([ 'list' ], {
+        env: {
+          XDG_CACHE_HOME: tmpRoot,
+          XDG_CONFIG_HOME: path.join(tmpRoot, 'empty-config')
+        }
+      });
+
+      // then
+      expect(stdout).to.include('com.example.A');
+      expect(stdout).to.include('com.example.B');
+
+      // de-duplicated: B appears only once
+      const lines = stdout.trim().split('\n').filter(l => l.includes('com.example.B'));
+      expect(lines).to.have.length(1);
+
+      await fs.rm(tmpRoot, { recursive: true, force: true });
+    });
+
+
+    it('should list all versions for a specific --id', async function() {
+
+      // given
+      const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'etc-list-'));
+      const templateDir = path.join(tmpRoot, 'element-templates-cli', 'templates');
+      await fs.mkdir(templateDir, { recursive: true });
+
+      await fs.writeFile(path.join(templateDir, 'b.json'), JSON.stringify([
+        { id: 'com.example.B', name: 'Template B', version: 1 },
+        { id: 'com.example.B', name: 'Template B', version: 2 }
+      ]));
+
+      // when
+      const { stdout } = await execRaw([ 'list', '--id', 'com.example.B' ], {
+        env: {
+          XDG_CACHE_HOME: tmpRoot,
+          XDG_CONFIG_HOME: path.join(tmpRoot, 'empty-config')
+        }
+      });
+
+      // then
+      expect(stdout).to.include('v1');
+      expect(stdout).to.include('v2');
+
+      await fs.rm(tmpRoot, { recursive: true, force: true });
+    });
+
+
+    it('should error when --id has no matches', async function() {
+
+      // given
+      const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'etc-list-'));
+      await fs.mkdir(path.join(tmpRoot, 'templates'), { recursive: true });
+
+      try {
+        await execRaw([ 'list', '--id', 'does.not.exist' ], {
+          env: {
+            XDG_CACHE_HOME: tmpRoot,
+            XDG_CONFIG_HOME: path.join(tmpRoot, 'empty-config')
+          }
+        });
+        expect.fail('should have thrown');
+      } catch (err) {
+        expect(err.stderr).to.include('does.not.exist');
+      } finally {
+        await fs.rm(tmpRoot, { recursive: true, force: true });
+      }
+    });
+  });
+
+
+  describe('download templates', function() {
+
+    it('should error when --id is missing', async function() {
+
+      try {
+        await execRaw([ 'download' ]);
+        expect.fail('should have thrown');
+      } catch (err) {
+        expect(err.stderr).to.include('--id');
+      }
+    });
+  });
 });
+
 
 function test(testName, templateName = testName, element = 'ServiceTask', only = false) {
   const fn = only ? it.only : it;
@@ -478,7 +714,10 @@ function test(testName, templateName = testName, element = 'ServiceTask', only =
   });
 }
 
-function exec({ subcommand, diagram, template, element, output, values } = {}) {
+function exec({
+  subcommand, diagram, template, templatePath, templateId,
+  element, output, values, cwd, env
+} = {}) {
   const args = [];
 
   if (subcommand) {
@@ -491,6 +730,14 @@ function exec({ subcommand, diagram, template, element, output, values } = {}) {
 
   if (template) {
     args.push('--template', template);
+  }
+
+  if (templatePath) {
+    args.push('--template-path', templatePath);
+  }
+
+  if (templateId) {
+    args.push('--template-id', templateId);
   }
 
   if (element) {
@@ -506,7 +753,15 @@ function exec({ subcommand, diagram, template, element, output, values } = {}) {
   }
 
   return execFile(CLI_PATH, args, {
-    cwd: path.resolve(__dirname, '..')
+    cwd: cwd ?? path.resolve(__dirname, '..'),
+    env: { ...process.env, ...env }
+  });
+}
+
+function execRaw(args, { cwd, env } = {}) {
+  return execFile(CLI_PATH, args, {
+    cwd: cwd ?? path.resolve(__dirname, '..'),
+    env: { ...process.env, ...env }
   });
 }
 
