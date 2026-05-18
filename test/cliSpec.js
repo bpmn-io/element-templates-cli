@@ -454,6 +454,190 @@ describe('cli', function() {
         expect(err.stderr).to.include('not found in diagram');
       }
     });
+
+
+    it('should read values from --values-file', async function() {
+
+      // given
+      const diagram = 'test/fixtures/diagrams/rest-conditional.bpmn';
+      const template = 'test/fixtures/templates/rest-conditional.json';
+
+      const tmpFile = path.join(os.tmpdir(), `etc-values-${Date.now()}.json`);
+      await fs.writeFile(tmpFile, JSON.stringify({
+        'REST Endpoint URL': 'https://from-file.example.com'
+      }));
+
+      try {
+
+        // when
+        const { stdout } = await exec({
+          subcommand: 'set',
+          diagram,
+          template,
+          element: 'ServiceTask',
+          valuesFile: tmpFile
+        });
+
+        // then
+        expect(stdout).to.include('value="https://from-file.example.com"');
+      } finally {
+        await fs.rm(tmpFile, { force: true });
+      }
+    });
+
+
+    it('should read --values from stdin when given "-"', async function() {
+
+      // given
+      const diagram = 'test/fixtures/diagrams/rest-conditional.bpmn';
+      const template = 'test/fixtures/templates/rest-conditional.json';
+
+      // when
+      const { stdout } = await execWithStdin(
+        [
+          'set',
+          '--diagram', diagram,
+          '--template', template,
+          '--element', 'ServiceTask',
+          '--values', '-'
+        ],
+        JSON.stringify({ 'REST Endpoint URL': 'https://from-stdin.example.com' })
+      );
+
+      // then
+      expect(stdout).to.include('value="https://from-stdin.example.com"');
+    });
+
+
+    it('should set a single field via --target / --value', async function() {
+
+      // given
+      const diagram = 'test/fixtures/diagrams/rest-conditional.bpmn';
+      const template = 'test/fixtures/templates/rest-conditional.json';
+
+      // when
+      const { stdout } = await execRaw([
+        'set',
+        '--diagram', diagram,
+        '--template', template,
+        '--element', 'ServiceTask',
+        '--target', 'REST Endpoint URL',
+        '--value', 'https://from-target.example.com'
+      ]);
+
+      // then
+      expect(stdout).to.include('value="https://from-target.example.com"');
+    });
+
+
+    it('should accept short -t / -v aliases', async function() {
+
+      // given
+      const diagram = 'test/fixtures/diagrams/rest-conditional.bpmn';
+      const template = 'test/fixtures/templates/rest-conditional.json';
+
+      // when
+      const { stdout } = await execRaw([
+        'set',
+        '--diagram', diagram,
+        '--template', template,
+        '--element', 'ServiceTask',
+        '-t', 'REST Endpoint URL',
+        '-v', 'https://short.example.com'
+      ]);
+
+      // then
+      expect(stdout).to.include('value="https://short.example.com"');
+    });
+
+
+    it('should error if --target is given without --value', async function() {
+
+      // given
+      const diagram = 'test/fixtures/diagrams/rest-conditional.bpmn';
+      const template = 'test/fixtures/templates/rest-conditional.json';
+
+      try {
+        await execRaw([
+          'set',
+          '--diagram', diagram,
+          '--template', template,
+          '--element', 'ServiceTask',
+          '--target', 'REST Method'
+        ]);
+        expect.fail('should have thrown');
+      } catch (err) {
+        expect(err.stderr).to.include('--target and --value must be used together');
+      }
+    });
+
+
+    it('should error if --value is given without --target', async function() {
+
+      // given
+      const diagram = 'test/fixtures/diagrams/rest-conditional.bpmn';
+      const template = 'test/fixtures/templates/rest-conditional.json';
+
+      try {
+        await execRaw([
+          'set',
+          '--diagram', diagram,
+          '--template', template,
+          '--element', 'ServiceTask',
+          '--value', 'post'
+        ]);
+        expect.fail('should have thrown');
+      } catch (err) {
+        expect(err.stderr).to.include('--target and --value must be used together');
+      }
+    });
+
+
+    it('should error if no value source is given', async function() {
+
+      // given
+      const diagram = 'test/fixtures/diagrams/rest-conditional.bpmn';
+      const template = 'test/fixtures/templates/rest-conditional.json';
+
+      try {
+        await exec({
+          subcommand: 'set',
+          diagram,
+          template,
+          element: 'ServiceTask'
+        });
+        expect.fail('should have thrown');
+      } catch (err) {
+        expect(err.stderr).to.include('Missing field values');
+      }
+    });
+
+
+    it('should error if more than one value source is given', async function() {
+
+      // given
+      const diagram = 'test/fixtures/diagrams/rest-conditional.bpmn';
+      const template = 'test/fixtures/templates/rest-conditional.json';
+
+      const tmpFile = path.join(os.tmpdir(), `etc-values-conflict-${Date.now()}.json`);
+      await fs.writeFile(tmpFile, JSON.stringify({ 'REST Method': 'post' }));
+
+      try {
+        await exec({
+          subcommand: 'set',
+          diagram,
+          template,
+          element: 'ServiceTask',
+          values: JSON.stringify({ 'REST Method': 'get' }),
+          valuesFile: tmpFile
+        });
+        expect.fail('should have thrown');
+      } catch (err) {
+        expect(err.stderr).to.include('Use only one of');
+      } finally {
+        await fs.rm(tmpFile, { force: true });
+      }
+    });
   });
 
 
@@ -716,7 +900,7 @@ function test(testName, templateName = testName, element = 'ServiceTask', only =
 
 function exec({
   subcommand, diagram, template, templatePath, templateId,
-  element, output, values, cwd, env
+  element, output, values, valuesFile, cwd, env
 } = {}) {
   const args = [];
 
@@ -752,6 +936,10 @@ function exec({
     args.push('--values', values);
   }
 
+  if (valuesFile) {
+    args.push('--values-file', valuesFile);
+  }
+
   return execFile(CLI_PATH, args, {
     cwd: cwd ?? path.resolve(__dirname, '..'),
     env: { ...process.env, ...env }
@@ -762,6 +950,24 @@ function execRaw(args, { cwd, env } = {}) {
   return execFile(CLI_PATH, args, {
     cwd: cwd ?? path.resolve(__dirname, '..'),
     env: { ...process.env, ...env }
+  });
+}
+
+function execWithStdin(args, input, { cwd, env } = {}) {
+  return new Promise((resolve, reject) => {
+    const child = childProcess.execFile(CLI_PATH, args, {
+      cwd: cwd ?? path.resolve(__dirname, '..'),
+      env: { ...process.env, ...env }
+    }, (err, stdout, stderr) => {
+      if (err) {
+        err.stdout = stdout;
+        err.stderr = stderr;
+        return reject(err);
+      }
+      resolve({ stdout, stderr });
+    });
+    child.stdin.write(input);
+    child.stdin.end();
   });
 }
 

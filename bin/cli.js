@@ -3,6 +3,7 @@
 import { parseArgs } from 'node:util';
 
 import { readFile, writeFile } from 'node:fs/promises';
+import { stdin } from 'node:process';
 
 import {
   applyTemplate,
@@ -74,8 +75,8 @@ Usage: element-templates-cli set [options]
 Set field values on a BPMN element via an element template. Supports cascading
 condition re-evaluation so newly-visible fields can be set in the same call.
 
-Field keys in --values use the field label (e.g. "Label"). Use "Section.Label"
-to disambiguate fields with the same label in different sections. Duplicate
+Field keys use the field label (e.g. "Label"). Use "Section.Label" to
+disambiguate fields with the same label in different sections. Duplicate
 labels within a section are suffixed with "(N)" (e.g. "Label (2)").
 
 Constraints (notEmpty, pattern, minLength, maxLength) are enforced before applying.
@@ -85,11 +86,19 @@ Template source (exactly one required):
   --template-id,   --ti <id>     Template ID (e.g. io.camunda.connectors.HttpJson.v2)
   --template           <path>    Deprecated alias for --template-path
 
+Field values source (exactly one required):
+  --values       <json>        JSON object mapping field labels to values.
+                               Example: --values '{"Task Name": "my-task", "Retries": "3"}'
+                               Use --values - to read JSON from stdin.
+  --values-file  <path>        Read the JSON object from a file. Use this for large
+                               or special-character-heavy values to avoid shell escaping.
+  --target, -t   <field>       Set a single field. Must be paired with --value.
+  --value,  -v   <value>       The value for --target. Must be paired with --target.
+                               For multiple fields, use --values / --values-file.
+
 Options:
   --diagram   <path>     Path to the BPMN diagram file (required)
   --element   <id>       ID of the BPMN element to modify (required)
-  --values    <json>     JSON object mapping field labels to values (required)
-                         Example: --values '{"Task Name": "my-task", "Retries": "3"}'
   --output    <path>     Output path for the modified diagram; use "-" for stdout (default: "-")
   --help                 Show this help message
 `.trim(),
@@ -223,21 +232,76 @@ async function runSet(args) {
     diagram: { type: 'string' },
     element: { type: 'string' },
     values: { type: 'string' },
+    'values-file': { type: 'string' },
+    target: { type: 'string', short: 't' },
+    value: { type: 'string', short: 'v' },
     output: { type: 'string', default: '-' },
     ...TEMPLATE_OPTIONS
   };
 
   const { values: opts } = parseArgsOrHelp(args, options, 'set');
 
-  requireOptions(opts, [ 'diagram', 'element', 'values' ]);
+  requireOptions(opts, [ 'diagram', 'element' ]);
 
   const diagram = await readFile(opts.diagram, 'utf8');
   const template = await resolveTemplate(opts);
-  const fieldValues = parseValues(opts.values);
+  const fieldValues = await resolveFieldValues(opts);
 
   const xml = await setFields(diagram, template, opts.element, fieldValues);
 
   await output(xml, opts.output);
+}
+
+async function resolveFieldValues(opts) {
+  const hasTarget = opts.target !== undefined;
+  const hasValue = opts.value !== undefined;
+
+  if (hasTarget !== hasValue) {
+    console.error('--target and --value must be used together.');
+    process.exit(1);
+  }
+
+  const sources = [
+    opts.values !== undefined ? '--values' : null,
+    opts['values-file'] !== undefined ? '--values-file' : null,
+    hasTarget ? '--target/--value' : null
+  ].filter(Boolean);
+
+  if (sources.length === 0) {
+    console.error(
+      'Missing field values. Use --values, --values-file, or --target/--value. ' +
+      'Run with --help for usage.'
+    );
+    process.exit(1);
+  }
+
+  if (sources.length > 1) {
+    console.error(
+      `Use only one of --values / --values-file / --target+--value (got: ${sources.join(', ')}).`
+    );
+    process.exit(1);
+  }
+
+  if (hasTarget) {
+    return { [opts.target]: opts.value };
+  }
+
+  if (opts['values-file'] !== undefined) {
+    const raw = await readFile(opts['values-file'], 'utf8');
+    return parseValues(raw, opts['values-file']);
+  }
+
+  const raw = opts.values === '-' ? await readStdin() : opts.values;
+  return parseValues(raw, opts.values === '-' ? '<stdin>' : null);
+}
+
+async function readStdin() {
+  stdin.setEncoding('utf8');
+  let data = '';
+  for await (const chunk of stdin) {
+    data += chunk;
+  }
+  return data;
 }
 
 async function runList(args) {
@@ -339,11 +403,12 @@ function parseArgsOrHelp(args, options, subcommand) {
   }
 }
 
-function parseValues(raw) {
+function parseValues(raw, source) {
   try {
     return JSON.parse(raw);
   } catch (e) {
-    throw new Error(`Invalid JSON in --values: ${ e.message }`);
+    const where = source ? ` (${source})` : ' in --values';
+    throw new Error(`Invalid JSON${where}: ${ e.message }`);
   }
 }
 
