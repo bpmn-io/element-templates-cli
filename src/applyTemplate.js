@@ -1,51 +1,13 @@
-import Modeler from 'bpmn-js-headless/lib/Modeler';
-import ZeebeModdleExtension from 'zeebe-bpmn-moddle/resources/zeebe.json';
-import { CloudElementTemplatesCoreModule } from 'bpmn-js-element-templates/core';
+import { createModeler, getElement, applyTemplateToElement, exportDiagram } from './modeler.js';
 
 export async function applyTemplate(diagram, template, element) {
   const parsedTemplate = JSON.parse(template);
 
-  const modeler = await importDiagram(diagram);
+  const modeler = await createModeler(diagram);
   const el = getElement(modeler, element);
   applyTemplateToElement(modeler, el, parsedTemplate);
 
   const xml = await exportDiagram(modeler);
 
   return xml;
-}
-
-async function importDiagram(diagram) {
-  const modeler = new Modeler({
-    additionalModules: [
-      CloudElementTemplatesCoreModule
-    ],
-    moddleExtensions: {
-      zeebe: ZeebeModdleExtension
-    }
-  });
-
-  await modeler.importXML(diagram);
-
-  return modeler;
-}
-
-async function exportDiagram(modeler) {
-  const result = await modeler.saveXML({
-    format: true
-  });
-
-  return result.xml;
-}
-
-function getElement(modeler, element) {
-  const elementRegistry = modeler.get('elementRegistry');
-
-  return elementRegistry.get(element);
-}
-
-function applyTemplateToElement(modeler, element, template) {
-  const elementTemplates = modeler.get('elementTemplates');
-  elementTemplates.set([ template ]);
-
-  elementTemplates.applyTemplate(element, template);
 }

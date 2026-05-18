@@ -3,48 +3,419 @@
 import { parseArgs } from 'node:util';
 
 import { readFile, writeFile } from 'node:fs/promises';
+import { stdin } from 'node:process';
 
 import {
-  applyTemplate
+  applyTemplate,
+  queryFields,
+  setFields,
+  resolveTemplatePath,
+  resolveTemplateId,
+  listTemplates,
+  downloadTemplate
 } from '../dist/index.js';
 
-run();
+const SUBCOMMANDS = [ 'apply', 'query', 'set', 'list', 'download' ];
+
+const HELP = {
+  root: `
+Usage: element-templates-cli [subcommand] [options]
+
+Subcommands:
+  apply      Apply an element template to a BPMN element (default)
+  query      Query visible fields of an element template as JSON
+  set        Set field values on a BPMN element via an element template
+  list       List available templates in local search paths
+  download   Download and cache templates from a remote JSON file
+
+Run \`element-templates-cli <subcommand> --help\` for subcommand details.
+`.trim(),
+
+  apply: `
+Usage: element-templates-cli [apply] [options]
+
+Apply an element template to a BPMN element.
+
+Template source (exactly one required):
+  --template-path, --tp <path>   Path to an element template JSON file
+  --template-id,   --ti <id>     Template ID (e.g. io.camunda.connectors.HttpJson.v2);
+                                 resolved via Desktop Modeler lookup paths and cached
+  --template           <path>    Deprecated alias for --template-path
+
+Options:
+  --diagram   <path>   Path to the BPMN diagram file (required)
+  --element   <id>     ID of the BPMN element to apply the template to (required)
+  --output    <path>   Output path for the modified diagram; use "-" for stdout (default: "-")
+  --help               Show this help message
+`.trim(),
+
+  query: `
+Usage: element-templates-cli query [options]
+
+Query the currently visible fields of an element template applied to a BPMN
+element. Returns a JSON object grouped by section, where each field includes:
+  type, value, choices (Dropdown), feel, constraints, description
+
+Hidden fields (condition not met) are excluded. Ungrouped fields appear under "General".
+
+Template source (exactly one required):
+  --template-path, --tp <path>   Path to an element template JSON file
+  --template-id,   --ti <id>     Template ID (e.g. io.camunda.connectors.HttpJson.v2)
+  --template           <path>    Deprecated alias for --template-path
+
+Options:
+  --diagram   <path>   Path to the BPMN diagram file (required)
+  --element   <id>     ID of the BPMN element to query (required)
+  --help               Show this help message
+`.trim(),
+
+  set: `
+Usage: element-templates-cli set [options]
+
+Set field values on a BPMN element via an element template. Supports cascading
+condition re-evaluation so newly-visible fields can be set in the same call.
+
+Field keys use the field label (e.g. "Label"). Use "Section.Label" to
+disambiguate fields with the same label in different sections. Duplicate
+labels within a section are suffixed with "(N)" (e.g. "Label (2)").
+
+Constraints (notEmpty, pattern, minLength, maxLength) are enforced before applying.
+
+Template source (exactly one required):
+  --template-path, --tp <path>   Path to an element template JSON file
+  --template-id,   --ti <id>     Template ID (e.g. io.camunda.connectors.HttpJson.v2)
+  --template           <path>    Deprecated alias for --template-path
+
+Field values source (exactly one required):
+  --values       <json>        JSON object mapping field labels to values.
+                               Example: --values '{"Task Name": "my-task", "Retries": "3"}'
+                               Use --values - to read JSON from stdin.
+  --values-file  <path>        Read the JSON object from a file. Use this for large
+                               or special-character-heavy values to avoid shell escaping.
+  --target, -t   <field>       Set a single field. Must be paired with --value.
+  --value,  -v   <value>       The value for --target. Must be paired with --target.
+                               For multiple fields, use --values / --values-file.
+
+Options:
+  --diagram   <path>     Path to the BPMN diagram file (required)
+  --element   <id>       ID of the BPMN element to modify (required)
+  --output    <path>     Output path for the modified diagram; use "-" for stdout (default: "-")
+  --help                 Show this help message
+`.trim(),
+
+  list: `
+Usage: element-templates-cli list [options]
+
+List templates available in local search paths (Desktop Modeler user data dir
+and the CLI cache). When --id is given, all cached versions of that template
+are shown instead.
+
+Options:
+  --id    <id>   Show all cached versions of a specific template ID
+  --help         Show this help message
+`.trim(),
+
+  download: `
+Usage: element-templates-cli download [options]
+
+Download a template from the Camunda marketplace index and save it to the local
+CLI cache so it is available to --template-id lookups.
+
+Options:
+  --id        <id>       Template ID to download (required)
+  --version   <version>  Specific version to download (default: latest)
+  --help                 Show this help message
+`.trim()
+};
+
+const TEMPLATE_OPTIONS = {
+  'template-path': { type: 'string' },
+  'tp': { type: 'string' },
+  'template-id': { type: 'string' },
+  'ti': { type: 'string' },
+  'template': { type: 'string' }
+};
+
+run().catch(err => {
+  console.error(err.message);
+  process.exit(1);
+});
 
 async function run() {
 
-  const options = {
-    diagram: {
-      type: 'string'
-    },
-    template: {
-      type: 'string'
-    },
-    element: {
-      type: 'string'
-    },
-    output: {
-      type: 'string',
-      default: '-'
-    }
-  };
+  // Detect subcommand: first non-flag argument
+  const subcommand = detectSubcommand();
+  const args = subcommand.detected
+    ? process.argv.slice(3)
+    : process.argv.slice(2);
 
-  const { values } = parseArgs({ options });
-
-  for (const option in options) {
-    if (!values[option]) {
-      throw new Error(`Missing option "${option}"`);
-    }
-  }
-
-  const diagram = await readFile(values.diagram, 'utf8');
-  const template = await readFile(values.template, 'utf8');
-
-  const xml = await applyTemplate(diagram, template, values.element);
-
-  if (values.output === '-') {
-    console.log(xml);
+  if (args.includes('--help') || args.includes('-h')) {
+    console.log(subcommand.detected ? HELP[subcommand.name] : HELP.root);
     return;
   }
 
-  await writeFile(values.output, xml);
+  switch (subcommand.name) {
+  case 'apply': return runApply(args);
+  case 'query': return runQuery(args);
+  case 'set': return runSet(args);
+  case 'list': return runList(args);
+  case 'download': return runDownload(args);
+  default:
+    console.error(
+      `Unknown subcommand "${subcommand.name}". Use "apply", "query", "set", "list", or "download".`
+    );
+    process.exit(1);
+  }
+}
+
+function detectSubcommand() {
+  const arg = process.argv[2];
+
+  // No arguments or starts with -- => default to 'apply' (backward compat)
+  if (!arg || arg.startsWith('--')) {
+    return { name: 'apply', detected: false };
+  }
+
+  // Only consume as subcommand if it's a known command,
+  // otherwise fall back to 'apply' (backward compat)
+  if (SUBCOMMANDS.includes(arg)) {
+    return { name: arg, detected: true };
+  }
+
+  return { name: 'apply', detected: false };
+}
+
+async function runApply(args) {
+
+  const options = {
+    diagram: { type: 'string' },
+    element: { type: 'string' },
+    output: { type: 'string', default: '-' },
+    ...TEMPLATE_OPTIONS
+  };
+
+  const { values: opts } = parseArgsOrHelp(args, options, 'apply');
+
+  requireOptions(opts, [ 'diagram', 'element' ]);
+
+  const diagram = await readFile(opts.diagram, 'utf8');
+  const template = await resolveTemplate(opts);
+
+  const xml = await applyTemplate(diagram, template, opts.element);
+
+  await output(xml, opts.output);
+}
+
+async function runQuery(args) {
+
+  const options = {
+    diagram: { type: 'string' },
+    element: { type: 'string' },
+    ...TEMPLATE_OPTIONS
+  };
+
+  const { values: opts } = parseArgsOrHelp(args, options, 'query');
+
+  requireOptions(opts, [ 'diagram', 'element' ]);
+
+  const diagram = await readFile(opts.diagram, 'utf8');
+  const template = await resolveTemplate(opts);
+
+  const result = await queryFields(diagram, template, opts.element);
+
+  console.log(JSON.stringify(result, null, 2));
+}
+
+async function runSet(args) {
+
+  const options = {
+    diagram: { type: 'string' },
+    element: { type: 'string' },
+    values: { type: 'string' },
+    'values-file': { type: 'string' },
+    target: { type: 'string', short: 't' },
+    value: { type: 'string', short: 'v' },
+    output: { type: 'string', default: '-' },
+    ...TEMPLATE_OPTIONS
+  };
+
+  const { values: opts } = parseArgsOrHelp(args, options, 'set');
+
+  requireOptions(opts, [ 'diagram', 'element' ]);
+
+  const diagram = await readFile(opts.diagram, 'utf8');
+  const template = await resolveTemplate(opts);
+  const fieldValues = await resolveFieldValues(opts);
+
+  const xml = await setFields(diagram, template, opts.element, fieldValues);
+
+  await output(xml, opts.output);
+}
+
+async function resolveFieldValues(opts) {
+  const hasTarget = opts.target !== undefined;
+  const hasValue = opts.value !== undefined;
+
+  if (hasTarget !== hasValue) {
+    console.error('--target and --value must be used together.');
+    process.exit(1);
+  }
+
+  const sources = [
+    opts.values !== undefined ? '--values' : null,
+    opts['values-file'] !== undefined ? '--values-file' : null,
+    hasTarget ? '--target/--value' : null
+  ].filter(Boolean);
+
+  if (sources.length === 0) {
+    console.error(
+      'Missing field values. Use --values, --values-file, or --target/--value. ' +
+      'Run with --help for usage.'
+    );
+    process.exit(1);
+  }
+
+  if (sources.length > 1) {
+    console.error(
+      `Use only one of --values / --values-file / --target+--value (got: ${sources.join(', ')}).`
+    );
+    process.exit(1);
+  }
+
+  if (hasTarget) {
+    return { [opts.target]: opts.value };
+  }
+
+  if (opts['values-file'] !== undefined) {
+    const raw = await readFile(opts['values-file'], 'utf8');
+    return parseValues(raw, opts['values-file']);
+  }
+
+  const raw = opts.values === '-' ? await readStdin() : opts.values;
+  return parseValues(raw, opts.values === '-' ? '<stdin>' : null);
+}
+
+async function readStdin() {
+  stdin.setEncoding('utf8');
+  let data = '';
+  for await (const chunk of stdin) {
+    data += chunk;
+  }
+  return data;
+}
+
+async function runList(args) {
+
+  const options = {
+    id: { type: 'string' }
+  };
+
+  const { values: opts } = parseArgsOrHelp(args, options, 'list');
+
+  const entries = await listTemplates();
+
+  if (opts.id) {
+    const versions = entries.filter(e => e.id === opts.id);
+    if (versions.length === 0) {
+      console.error(`No templates found with id "${opts.id}".`);
+      process.exit(1);
+    }
+    for (const e of versions) {
+      const ver = e.version !== undefined ? `v${e.version}` : '(no version)';
+      console.log(`${e.id}  ${ver}  [${e.source}]`);
+    }
+  } else {
+
+    // Deduplicate by id, show distinct ids
+    const seen = new Set();
+    for (const e of entries) {
+      if (seen.has(e.id)) continue;
+      seen.add(e.id);
+      console.log(`${e.id}  ${e.name !== e.id ? `(${e.name})` : ''}`);
+    }
+  }
+}
+
+async function runDownload(args) {
+
+  const options = {
+    id: { type: 'string' },
+    version: { type: 'string' }
+  };
+
+  const { values: opts } = parseArgsOrHelp(args, options, 'download');
+
+  if (!opts.id) {
+    console.error('Missing required option "--id". Run with --help for usage.');
+    process.exit(1);
+  }
+
+  const version = opts.version !== undefined ? Number(opts.version) : undefined;
+
+  if (opts.version !== undefined && isNaN(version)) {
+    console.error('--version must be a number.');
+    process.exit(1);
+  }
+
+  const { id, version: ver, file } = await downloadTemplate(opts.id, { version });
+
+  const verLabel = ver !== undefined ? `v${ver}` : '(no version)';
+  console.log(`Saved ${id} ${verLabel} → ${file}`);
+}
+
+async function resolveTemplate(opts) {
+  const templatePath = opts['template-path'] ?? opts.tp ?? opts.template;
+  const templateId = opts['template-id'] ?? opts.ti;
+
+  if (templatePath && templateId) {
+    throw new Error('Use only one of --template-path / --template-id.');
+  }
+
+  if (!templatePath && !templateId) {
+    throw new Error(
+      'Missing template source. Use --template-path <path> or --template-id <id>. ' +
+      'Run with --help for usage.'
+    );
+  }
+
+  if (templatePath) {
+    return resolveTemplatePath(templatePath);
+  }
+
+  return resolveTemplateId(templateId, { diagramPath: opts.diagram });
+}
+
+function requireOptions(opts, required) {
+  for (const name of required) {
+    if (opts[name] === undefined) {
+      console.error(`Missing required option "--${name}". Run with --help for usage.`);
+      process.exit(1);
+    }
+  }
+}
+
+function parseArgsOrHelp(args, options, subcommand) {
+  try {
+    return parseArgs({ args, options });
+  } catch (err) {
+    console.error(`${err.message}\n\n${HELP[subcommand]}`);
+    process.exit(1);
+  }
+}
+
+function parseValues(raw, source) {
+  try {
+    return JSON.parse(raw);
+  } catch (e) {
+    const where = source ? ` (${source})` : ' in --values';
+    throw new Error(`Invalid JSON${where}: ${ e.message }`);
+  }
+}
+
+async function output(content, dest) {
+  if (!dest || dest === '-') {
+    console.log(content);
+  } else {
+    await writeFile(dest, content);
+  }
 }
