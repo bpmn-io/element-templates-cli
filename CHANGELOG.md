@@ -2,6 +2,13 @@
 
 All notable changes to [element-templates-cli](https://github.com/bpmn-io/element-templates-cli) are documented here. We use [semantic versioning](http://semver.org/) for releases.
 
+## 0.6.0
+
+* `FIX`: allow to apply start event template ([#18](https://github.com/bpmn-io/element-templates-cli/issues/18))
+* `DEPS`: update to `bpmn-js-headless@0.2.0`
+* `DEPS`: update to `zeebe-bpmn-moddle@1.17.0`
+* `DEPS`: update to `bpmn-js-element-templates@2.28.0`
+
 ## [0.5.0](https://github.com/bpmn-io/element-templates-cli/compare/v0.4.0...v0.5.0) (2025-09-11)
 
 
