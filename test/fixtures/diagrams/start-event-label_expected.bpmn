@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_0kbpogq" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.49.0-dev" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.9.0">
+  <bpmn:process id="Process_18mmu5n" isExecutable="true">
+    <bpmn:startEvent id="START_EVENT" name="START_EVENT">
+      <bpmn:outgoing>Flow_1q8aiwy</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:sequenceFlow id="Flow_1q8aiwy" sourceRef="START_EVENT" targetRef="SERVICE_TASK" />
+    <bpmn:serviceTask id="SERVICE_TASK" name="SERVICE_TASK" zeebe:modelerTemplate="io.camunda.examples.ConditionalRestConnector">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="http" />
+        <zeebe:ioMapping />
+        <zeebe:taskHeaders>
+          <zeebe:header key="method" value="get" />
+        </zeebe:taskHeaders>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_1q8aiwy</bpmn:incoming>
+    </bpmn:serviceTask>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_18mmu5n">
+      <bpmndi:BPMNShape id="StartEvent_1_di" bpmnElement="START_EVENT">
+        <dc:Bounds x="182" y="102" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="162" y="145" width="78" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0c0efj2_di" bpmnElement="SERVICE_TASK">
+        <dc:Bounds x="270" y="80" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_1q8aiwy_di" bpmnElement="Flow_1q8aiwy">
+        <di:waypoint x="218" y="120" />
+        <di:waypoint x="270" y="120" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
