@@ -23,6 +23,9 @@ describe('cli', function() {
     test('rest-conditional');
 
 
+    test('start-event-label', 'rest-conditional', 'SERVICE_TASK');
+
+
     test('easy-post-connector');
 
 
