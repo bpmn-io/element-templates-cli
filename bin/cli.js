@@ -22,6 +22,9 @@ async function run() {
     element: {
       type: 'string'
     },
+    values: {
+      type: 'string'
+    },
     output: {
       type: 'string',
       default: '-'
@@ -30,7 +33,9 @@ async function run() {
 
   const { values } = parseArgs({ options });
 
-  for (const option in options) {
+  const requiredOptions = [ 'diagram', 'template', 'element', 'output' ];
+
+  for (const option of requiredOptions) {
     if (!values[option]) {
       throw new Error(`Missing option "${option}"`);
     }
@@ -38,8 +43,9 @@ async function run() {
 
   const diagram = await readFile(values.diagram, 'utf8');
   const template = await readFile(values.template, 'utf8');
+  const inputValues = values.values ? JSON.parse(await readFile(values.values, 'utf8')) : {};
 
-  const xml = await applyTemplate(diagram, template, values.element);
+  const xml = await applyTemplate(diagram, template, values.element, inputValues);
 
   if (values.output === '-') {
     console.log(xml);
