@@ -1,0 +1,22 @@
+{
+  "$schema": "https://unpkg.com/@camunda/zeebe-element-templates-json-schema/resources/schema.json",
+  "name": "Agent Template",
+  "id": "agent-type",
+  "version": 1,
+  "appliesTo": [
+    "bpmn:ServiceTask"
+  ],
+  "elementType": {
+    "value": "bpmn:ServiceTask"
+  },
+  "properties": [
+    {
+      "type": "Hidden",
+      "binding": {
+        "type": "zeebe:agentDefinition",
+        "property": "agentType"
+      },
+      "value": "external"
+    }
+  ]
+}

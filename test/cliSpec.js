@@ -39,6 +39,9 @@ describe('cli', function() {
 
 
     test('ad-hoc', 'ad-hoc', 'AdHocSubProcess');
+
+
+    test('agent-type');
   });
 });
 
