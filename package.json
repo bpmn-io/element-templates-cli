@@ -37,6 +37,6 @@
     "eslint": "^9.28.0",
     "eslint-plugin-bpmn-io": "^2.2.0",
     "mocha": "^11.5.0",
-    "zeebe-bpmn-moddle": "^1.18.0"
+    "zeebe-bpmn-moddle": "^2.0.0"
   }
 }
