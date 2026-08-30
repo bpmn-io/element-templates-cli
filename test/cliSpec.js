@@ -43,6 +43,20 @@ describe('cli', function() {
 
     test('agent-type');
   });
+
+  it('should support input values for conditional visibility', async function() {
+
+    // when
+    const { stdout } = await exec({
+      diagram: 'test/fixtures/diagrams/task-header-with-condition.bpmn',
+      template: 'test/fixtures/templates/task-header-with-condition.json',
+      element: 'ServiceTask',
+      values: 'test/fixtures/values/task-header-with-condition-hidden.json'
+    });
+
+    // then
+    expect(stdout).to.not.include('key="resultExpression"');
+  });
 });
 
 function test(testName, templateName = testName, element = 'ServiceTask', only = false) {
@@ -79,6 +93,7 @@ function prepareArgs({
   diagram,
   template,
   element,
+  values,
   output
 }) {
   const args = [];
@@ -97,6 +112,10 @@ function prepareArgs({
 
   if (output) {
     args.push('--output', output);
+  }
+
+  if (values) {
+    args.push('--values', values);
   }
 
   return args;
