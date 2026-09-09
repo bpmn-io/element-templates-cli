@@ -29,6 +29,9 @@
     "url": "https://github.com/bpmn-io/element-templates-cli/issues"
   },
   "homepage": "https://github.com/bpmn-io/element-templates-cli#readme",
+  "engines": {
+    "node": "^24.0.0"
+  },
   "devDependencies": {
     "bpmn-js-element-templates": "^2.32.0",
     "bpmn-js-headless": "^0.2.0",
