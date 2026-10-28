@@ -11,6 +11,8 @@ jobs:
           integration-deps: 'mocha@11'
         - node-version: 24
           integration-deps: ''
+        - node-version: 26
+          integration-deps: ''
 
     runs-on: ${{ matrix.os }}
 
